@@ -1,0 +1,265 @@
+{{ 'bundler.css' | asset_url | stylesheet_tag }}
+
+{% assign product_group_title = 'animals' %}
+
+{% if product_group_title != blank %}
+  {% assign product_group = shop.metaobjects['product_group'][product_group_title].products.value %}
+  <div class="variant-title">
+    <span class="variant-title-label">Animal:</span>
+    {{ product.title }}</div>
+  <div class="variant-options">
+    {% for item in product_group %}
+      <div class="variant-option {% if item.handle == product.handle %}active{% endif %}" data-href="{{ item.url }}"><img src="{{ item.featured_image | img_url: '200x' }}" /></div>
+    {% endfor %}
+  </div>
+{% endif %}
+<style>
+  .variant-option.active {
+    opacity: 1;
+  }
+
+  .variant-title-label {
+    font-weight: 500;
+  }
+
+  .variant-options {
+    display: flex;
+    justify-content: flex-start;
+    gap: 16px;
+    margin-bottom: 32px;
+    width: 100%;
+  }
+
+  .variant-option {
+    border: 1px solid rgb(148, 148, 148);
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 4px 8px;
+    opacity: 0.5;
+    display: block;
+    text-decoration: none;
+    color: black;
+  }
+
+  .variant-option:hover {
+    border: 1px solid black;
+  }
+
+  .variant-option.active {
+    border: 1px solid black;
+  }
+
+  .variant-option {
+    width: 60px;
+    height: auto;
+  }
+
+  .variant-option img {
+    width: 100%;
+  }
+</style>
+<script>
+
+  const sectionID = document.querySelector('.bundle-builder-product').id.replace('shopify-section-', '')
+  let variantSelectors = document.querySelectorAll('.variant-option')
+
+  const changeProductEvent = new Event("changeProduct");
+
+  const changeProduct = (productURL) => {
+    let requestURL = `${
+      window.location.origin
+    }${productURL}?section_id=${sectionID}`
+    fetch(requestURL).then(response => response.text()).then((responseText) => {
+      const newHtml = new DOMParser().parseFromString(responseText, 'text/html').querySelector('div.product').innerHTML;
+
+      document.querySelector('div.product').innerHTML = newHtml;
+      history.pushState({}, '', `${productURL}?view=bundle-builder`)
+      document.dispatchEvent(changeProductEvent)
+    })
+  };
+
+  variantSelectors.forEach((selector) => {
+    selector.addEventListener('click', (e) => {
+      let productURL = e.currentTarget.dataset.href
+      changeProduct(productURL)
+    })
+  })
+
+  document.addEventListener("changeProduct", (e) => {
+    const variantSelectors = document.querySelectorAll('.variant-option')
+    variantSelectors.forEach((selector) => {
+      selector.addEventListener('click', (e) => {
+        let productURL = e.currentTarget.dataset.href
+        changeProduct(productURL)
+      })
+    })
+  }, false,);
+
+
+  onpopstate = (event) => {
+    const origin = event.currentTarget.location.origin
+    const path = event.currentTarget.location.pathname
+    let requestURL = `${
+      origin
+    }${path}?section_id=${sectionID}`
+    fetch(requestURL).then(response => response.text()).then((responseText) => {
+      const newHtml = new DOMParser().parseFromString(responseText, 'text/html').querySelector('div.product').innerHTML;
+
+      document.querySelector('div.product').innerHTML = newHtml;
+    }).then(() => {
+      let variantSelectors = document.querySelectorAll('.variant-option')
+      variantSelectors.forEach((selector) => {
+        console.log(selector)
+        selector.addEventListener('click', (e) => {
+          let productURL = selector.dataset.href
+          changeProduct(productURL)
+        });
+      });
+    });
+  };
+</script>
+
+<bundle-builder>
+  <div class="js-step-1">
+    <div class="step-title">
+      Step 1: Choose Your Bundle
+    </div>
+    <div class="bundle-options">
+      {% assign bundle_options = shop.metaobjects['bundle_option'].values %}
+      {% assign bundle_options = bundle_options | reverse %}
+      {% for item in bundle_options %}
+        <div
+          class="bundle-option {% if forloop.index0 == 0 %}active{% endif %}"
+          data-bundle-size="{{ item.bundle_size }}"
+          data-idx="{{ forloop.index0 }}">
+          {% unless item.total_savings == blank %}
+            <div class="bundle-option_label-top">
+              {{ item.discount }} OFF
+            </div>
+          {% endunless %}
+          <div>
+            <div class="bundle-option_image-container"></div>
+            <div class="bundle-option_title">{{ item.bundle_size }} {{ item.label }}</div>
+            {% if item.discounted_price != blank %}
+              <div class="bundle-option_prices">
+                <span class="bundle-option_compare-price">${{ item.og_price }}</span>
+                <span class="bundle-option_real-price">${{ item.discounted_price }}</span>
+              </div>
+            {% else %}
+              <div class="bundle-option_prices">
+                <span class="bundle-option_real-price">${{ item.og_price }}</span>
+              </div>
+            {% endif %}
+            {% unless item.total_savings == blank %}
+              <div class="bundle-option_label-bottom">Save {{ item.total_savings }}</div>
+            {% endunless %}
+          </div>
+        </div>
+
+      {% endfor %}
+      {% comment %}
+
+      <div
+      class="bundle-option active"
+      data-bundle-size="5"
+      data-idx="0">
+      <div class="bundle-option_label-top">
+      50% Off
+      </div>
+      <div>
+      <div class="bundle-option_image-container">
+      <img src="#" alt="" />
+      </div>
+      <div class="bundle-option_title">5 Animals</div>
+      <div class="bundle-option_prices">
+      <span class="bundle-option_compare-price">$39.99</span>
+      <span class="bundle-option_real-price">$20 each</span>
+      </div>
+      <div class="bundle-option_label-bottom">Save $99.95</div>
+      </div>
+      </div>
+      <div
+      class="bundle-option"
+      data-bundle-size="3"
+      data-idx="1">
+      <div class="bundle-option_label-top">
+      30% Off
+      </div>
+      <div>
+      <div class="bundle-option_image-container">
+      <img src="#" alt="" />
+      </div>
+      <div class="bundle-option_title">3 Animals</div>
+      <div class="bundle-option_prices">
+      <span class="bundle-option_compare-price">$39.99</span>
+      <span class="bundle-option_real-price">$27.99 each</span>
+      </div>
+      <div class="bundle-option_label-bottom">Save $36</div>
+      </div>
+      </div>
+      <div
+      class="bundle-option"
+      data-bundle-size="2"
+      data-idx="2">
+      <div class="bundle-option_label-top">
+      20% Off
+      </div>
+      <div>
+      <div class="bundle-option_image-container">
+      <img src="#" alt="" />
+      </div>
+      <div class="bundle-option_title">2 Animals</div>
+      <div class="bundle-option_prices">
+      <span class="bundle-option_compare-price">$29.95</span>
+      <span class="bundle-option_real-price">$26.96 each</span>
+      </div>
+      <div class="bundle-option_label-bottom">Save $8.97</div>
+      </div>
+      </div>
+      <div
+      class="bundle-option"
+      data-bundle-size="1"
+      data-idx="3">
+      <div>
+      <div class="bundle-option_image-container">
+      <img src="#" alt="" />
+      </div>
+      <div class="bundle-option_title">1 Animal</div>
+      <div class="bundle-option_prices">
+      <span class="bundle-option_real-price">$29.95</span>
+      </div>
+      </div>
+      </div>
+      {% endcomment %}
+    </div>
+    <button class="button button--xl button-primary js-next-step">Next: Choose Your Animals</button>
+  </div>
+  <div class="js-step-2 hidden">
+    <div class="selected-bundle-options-container">
+      <div class="js-selected-bundle-options_header selected-bundle-options_header step-title"></div>
+      <div class="js-selected-bundle-options selected-bundle-options"></div>
+    </div>
+    <div class="animal-options">
+
+      {% for item in product_group %}
+        <div
+          class="animal-option"
+          data-id="{{ item.variants[0].id }}"
+          data-title="{{ item.title }}"
+          value="{{ item.variants[0].id }}"
+          data-imgsrc="{{ item.featured_image.src | img_url: '300x'}}">
+          <img src="{{item.featured_image.src | img_url: '300x'}}" alt="{{ item.title }}" />
+          <span class="animal-option-title">{{ item.title }}</span>
+          <button class="animal-option-button">Add</button>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="bundle-buttons-container">
+      <button class="button button--xl js-back-step">Back</button>
+      <button disabled class="button button--xl js-add-bundle-to-cart button-primary">Add Bundle To Cart</button>
+    </div>
+  </div>
+</bundle-builder>
+
+{{ 'bundler.js' | asset_url | script_tag }}
